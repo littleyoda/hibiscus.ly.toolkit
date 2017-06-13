@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 public class Parsing {
 
 	public static Pattern befehlMitKlammer = Pattern.compile("([a-zA-Z]*)" + Pattern.quote("(") + "(.*)" + Pattern.quote(")"));
-	static Pattern textMitAnfuehrungstriche = Pattern.compile("\"(.*?)\".*");
+	public static Pattern textMitAnfuehrungstriche = Pattern.compile("\"(.*?)\".*");
 
 	public static String extractTextAusAnf(String s) {
 		Matcher m = textMitAnfuehrungstriche.matcher(s);

@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.ImmediateRefreshHandler;
@@ -272,6 +274,14 @@ public class HUEngine extends Engine {
 	}
 
 	@Override
+	public int count(ResultSets r, String rest) {
+		List<?> elements = getElements(page, rest);
+//		Logger.error("assertExists: " + fehlermeldung + " " + rest + " " + elements.toString());
+		return elements.size();
+	}
+	
+	
+	@Override
 	public void enrichWithDebuginfo(ResultSets r) {
 		if (page != null) {
 			r.htmlcode = page.asXml();
@@ -283,6 +293,28 @@ public class HUEngine extends Engine {
 
 	@Override
 	public void downloadfromurl(ResultSets r, String url) {
+		throw new IllegalStateException("Nicht implementiert");
+	}
+
+	@Override
+	public void close() {
+		try {
+			if (webClient != null) {
+				webClient.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public List<ImmutablePair<String,String>>  getOptions(ResultSets r, String selector) {
+		throw new IllegalStateException("Nicht implementiert");
+	}
+
+	
+	@Override
+	public void setOptionByText(ResultSets r, String selector, String optiontext) {
 		throw new IllegalStateException("Nicht implementiert");
 	}
 

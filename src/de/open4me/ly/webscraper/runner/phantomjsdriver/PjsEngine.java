@@ -1,18 +1,25 @@
 package de.open4me.ly.webscraper.runner.phantomjsdriver;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
-import org.apache.http.client.utils.URIBuilder;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.openqa.selenium.By;
 import org.openqa.selenium.SearchContext;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.support.ui.Select;
 
 import ch.racic.selenium.helper.download.FileData;
 import ch.racic.selenium.helper.download.SeleniumDownloadHelper;
@@ -59,12 +66,12 @@ public class PjsEngine extends Engine {
 	public void open(ResultSets r, String openurl) {
 		driver.get(openurl);
 		PjsUtils.waitForJSandJQueryToLoad(driver);
-//		try {
-//			Thread.sleep(1000);
-//			r.url = new URL(driver.getCurrentUrl());
-//		} catch (MalformedURLException | InterruptedException e) {
-//			e.printStackTrace();
-//		}
+		//		try {
+		//			Thread.sleep(1000);
+		//			r.url = new URL(driver.getCurrentUrl());
+		//		} catch (MalformedURLException | InterruptedException e) {
+		//			e.printStackTrace();
+		//		}
 	}
 
 	@Override
@@ -94,7 +101,7 @@ public class PjsEngine extends Engine {
 
 	@Override
 	public void extract(ResultSets r, String selector, String split) {
-		 List<WebElement> elements = getElements(selector);
+		List<WebElement> elements = getElements(selector);
 		if (elements.size() == 0) {
 			throw new IllegalStateException("Kein Element gefunden!" + selector);
 		}
@@ -129,6 +136,7 @@ public class PjsEngine extends Engine {
 		}
 	}
 
+
 	@Override
 	public void download(ResultSets r, String selector) {
 		List<WebElement> elements = getElements(selector);
@@ -137,68 +145,122 @@ public class PjsEngine extends Engine {
 		}
 		WebElement x = elements.get(0);
 		if ("input".equals(x.getTagName()) && "submit".equals(x.getAttribute("type"))) {
-			elements = getElements(x, "getbyxpath(\".//ancestor::form\")");
-			if (elements.size() == 0) {
-				throw new IllegalStateException("Form not found!" + selector);
-			}
-			WebElement form = elements.get(0);
-			System.out.println(form.getText() + " " + form.getTagName() + " ");
-			List<WebElement> input = getElements(form, "getbyxpath(\".//input\")");
-			String currentpage = driver.getCurrentUrl();
-			String path = form.getAttribute("action");
-			System.out.println(driver.getCurrentUrl());
-			URIBuilder builder = null;
-				try {
-					builder = new URIBuilder(path);
-				} catch (URISyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-		//	builder.setPath(form.getAttribute("action"));
-			for (WebElement xx : input) {
-				builder = builder.addParameter(xx.getAttribute("name"), xx.getAttribute("value"));
-				System.out.println(xx.getAttribute("name") + " " + xx.getAttribute("value"));
-			}
-	        System.out.println(builder.toString());
-			System.out.println(elements);;
-			downloadfromurl(r, builder.toString());
+			handleFormDownloads(r, selector, x);
+		} else if ("a".equals(x.getTagName())) {
+			downloadfromurl(r, x.getAttribute("href"));
 		} else {
 			throw new IllegalStateException("Not supported element");
 		}
-////		List<WebElement> elements = getElements(selector);
-////		if (elements.size() == 0) {
-////			throw new IllegalStateException("Kein Element gefunden!" + selector);
-////		}
-////		WebElement x = elements.get(0);
-//		String useragent = caps.getCapability("phantomjs.page.settings.userAgent").toString();
-//		FileDownloader down = new FileDownloader(driver, useragent, language);
-//		try {
-////			String out = down.downloadFile(x);
-//			String out = down.downloadUrl(selector);
-//			r.htmlcode = out;
-//			r.txt = out;
-//		} catch (Exception e) {
-//			r.e = e;
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//
-////		try {
-////			Page p;
-////			p = ((HtmlElement) dl).click();
-////			r.page = p;
-////			r.url = p.getUrl();
-////		} catch (IOException e) {
-////			r.e = e;
-////		}
-////		throw new IllegalStateException("Nicht implementiert");
+		////		List<WebElement> elements = getElements(selector);
+		////		if (elements.size() == 0) {
+		////			throw new IllegalStateException("Kein Element gefunden!" + selector);
+		////		}
+		////		WebElement x = elements.get(0);
+		//		String useragent = caps.getCapability("phantomjs.page.settings.userAgent").toString();
+		//		FileDownloader down = new FileDownloader(driver, useragent, language);
+		//		try {
+		////			String out = down.downloadFile(x);
+		//			String out = down.downloadUrl(selector);
+		//			r.htmlcode = out;
+		//			r.txt = out;
+		//		} catch (Exception e) {
+		//			r.e = e;
+		//			// TODO Auto-generated catch block
+		//			e.printStackTrace();
+		//		}
+		//
+		////		try {
+		////			Page p;
+		////			p = ((HtmlElement) dl).click();
+		////			r.page = p;
+		////			r.url = p.getUrl();
+		////		} catch (IOException e) {
+		////			r.e = e;
+		////		}
+		////		throw new IllegalStateException("Nicht implementiert");
 
+	}
+
+	private void handleFormDownloads(ResultSets r, String selector, WebElement x)  {
+		// TODO Check if x is already a form-Element
+		WebElement form = getForm(x); 
+		Map<String, String> param = extractParamter(form);
+
+		boolean isPost = "post".equalsIgnoreCase(form.getAttribute("method"));
+//		String currentpage = driver.getCurrentUrl();
+		String path = form.getAttribute("action");
+		if (isPost) {
+			downloadpost(r, path, param);
+		} else {
+			String paramString = paramToString(param);
+			if (path.contains("?")) {
+				path += "&" + paramString;
+			} else {
+				path += "?" + paramString;
+			}
+			URL url;
+			try {
+				url = new URL(driver.getCurrentUrl());
+				url = new URL(url, path);
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+				throw new IllegalStateException("Ungültige URL Kombination: " + driver.getCurrentUrl() + " / " + path);
+			}
+			System.out.println("URL: " + url);
+			downloadfromurl(r, url.toString());
+		}
+	}
+
+	private void downloadpost(ResultSets r, String path, Map<String, String> param) {
+		try {
+			String paramString = paramToString(param);
+			SeleniumDownloadHelper sdlh;
+			sdlh = new SeleniumDownloadHelper(driver);
+			FileData testFileData = sdlh.getFileFromUrlRaw(new URL(path), "POST", paramString);
+			r.txt = new String(testFileData.getData(), "UTF-8");
+			r.page = new StringPage(r.txt);
+		} catch (IOException e) {
+			r.e = e;
+		}
+	}
+
+	private String paramToString(Map<String, String> param) {
+		return param.entrySet().stream()
+				.map(
+						s-> { 
+							try { 
+								return URLEncoder.encode(s.getKey(), "UTF-8") + "=" + URLEncoder.encode(s.getValue(), "UTF-8"); 
+							} catch (UnsupportedEncodingException e) { throw new IllegalStateException(e.getMessage()); } 
+						}
+						).collect(Collectors.joining("&"));
+	}
+
+	private WebElement getForm(WebElement x) {
+		List<WebElement> elements = getElements(x, "getbyxpath(\".//ancestor::form\")");
+		if (elements.size() == 0) {
+			throw new IllegalStateException("Form not found!");
+		}
+		return elements.get(0);
+	}
+
+	private Map<String, String> extractParamter(WebElement form) {
+		Map<String,String> params = new LinkedHashMap<>();		
+		for (WebElement xx : getElements(form, "getbyxpath(\".//input\")")) {
+			params.put(xx.getAttribute("name"), xx.getAttribute("value"));
+		}
+		return params;
 	}
 
 	@Override
 	public boolean assertexists(ResultSets r, String selector) {
 		List<?> elements = getElements(selector);
 		return (elements.size() > 0);
+	}
+
+	@Override
+	public int count(ResultSets r, String selector) {
+		List<?> elements = getElements(selector);
+		return elements.size();
 	}
 
 	@Override
@@ -214,12 +276,12 @@ public class PjsEngine extends Engine {
 		}
 		r.htmlcode = driver.getPageSource();
 	}
-	
+
 	public List<WebElement> getElements(String selector) {
 		return getElements(driver, selector);
 	}
 
-		
+
 	public List<WebElement> getElements(SearchContext sc, String selector) {
 		Matcher m = Parsing.befehlMitKlammer.matcher(selector);
 		if (!m.matches()) {
@@ -228,26 +290,68 @@ public class PjsEngine extends Engine {
 		switch (m.group(1).toLowerCase()) {
 		case "getbyname":
 			throw new IllegalStateException("Nicht implementiert");
-//			return page.getElementsByName(Parsing.extractTextAusAnf(m.group(2)));
+			//			return page.getElementsByName(Parsing.extractTextAusAnf(m.group(2)));
 		case "getbyid":
 			return sc.findElements(By.id(Parsing.extractTextAusAnf(m.group(2))));
 		case "getbyxpath":
 			return sc.findElements(By.xpath(Parsing.extractTextAusAnf(m.group(2))));
 		case "getbytext":
 			throw new IllegalStateException("Nicht implementiert");
-//			String text = Parsing.extractTextAusAnf(m.group(2));
-//			List<HtmlElement> elements = getAllHtmlElements(page);
-//			for (Iterator i = elements.listIterator(); i.hasNext();) {
-//				HtmlElement element = (HtmlElement) i.next();
-//				if (element.getChildElementCount() > 0 || !element.getTextContent().equals(text)) {
-//					i.remove();						
-//				}
-//			}
-//			return elements; 
+			//			String text = Parsing.extractTextAusAnf(m.group(2));
+			//			List<HtmlElement> elements = getAllHtmlElements(page);
+			//			for (Iterator i = elements.listIterator(); i.hasNext();) {
+			//				HtmlElement element = (HtmlElement) i.next();
+			//				if (element.getChildElementCount() > 0 || !element.getTextContent().equals(text)) {
+			//					i.remove();						
+			//				}
+			//			}
+			//			return elements; 
 		default:
 			throw new IllegalStateException("Befehl " + m.group(1) + " ist unbekannt!");
 		}
 	}
 
-	
+	@Override
+	public void close() {
+		try {
+			if (driver != null) {
+				driver.close();
+				driver.quit();
+			}
+			driver = null;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public List<ImmutablePair<String,String>>  getOptions(ResultSets r, String selector) {
+		Select dropdown = getSelectionElement(selector); 		
+		List<ImmutablePair<String,String>> params = new ArrayList<ImmutablePair<String,String>>();
+		for (WebElement w : dropdown.getOptions()) {
+			params.add(ImmutablePair.of(w.getAttribute("value"), w.getText()));
+		}
+		return params;
+	}
+
+	@Override
+	public void setOptionByText(ResultSets r, String selector, String optiontext) {
+		Select dropdown = getSelectionElement(selector); 		
+		for (WebElement w : dropdown.getOptions()) {
+			if (w.getText().equals(optiontext)) {
+				w.click();
+				return;
+			}
+		}
+		throw new IllegalStateException("Option " + optiontext + " nicht gefunden!");
+	}
+
+
+	public Select getSelectionElement(String selector) {
+		List<WebElement> elements = getElements(selector);
+		if (elements.size() == 0) {
+			throw new IllegalStateException("Element not found! " + selector);
+		}
+		return new Select(elements.get(0));
+	}
 }
