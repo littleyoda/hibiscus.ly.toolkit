@@ -67,7 +67,7 @@ public abstract class Runner {
 	private ArrayList<ResultSets> results;
 	private ArrayList<Page> downloads = new ArrayList<Page>();
 	Engine engine;
-	
+
 	public boolean run()  {
 		results = new ArrayList<ResultSets>(); 
 
@@ -94,126 +94,153 @@ public abstract class Runner {
 					rest = codeline.substring(parts[0].length() + 1);
 				}
 				switch (parts[0].toLowerCase()) {
-					case "engine":
-						switch (rest.toLowerCase()) {
-						case "htmlunit": engine = new HUEngine(); break;
-						case "phantomjsdriver": engine = new PjsEngine(); break;
-						default:
-							throw new IllegalStateException("Unbekannte Engine: " + rest);
-						}
-						break;
-						
-					case "cfg":
-						Pattern cfgPat = Pattern.compile("(.*)=(.*)");
-						Matcher m = cfgPat.matcher(rest);
-						if (!m.matches()) {
-							throw new IllegalStateException("Befehl ist ungültig1: " + rest);
-						}
-						getEngine().setCfg(m.group(1), m.group(2));
-						break;
-						
-					case "open":
-						String openurl = Parsing.extractTextAusAnf(parts[1]);
-						r.action = "Open " + openurl;
-						getEngine().open(r, openurl);
-						break;
-	
-					case "set":
-						Pattern setPat = Pattern.compile("(.*) to value (.*)");
-						m = setPat.matcher(rest);
-						if (!m.matches()) {
-							throw new IllegalStateException("Befehl ist ungültig");
-						}
-						String value = Parsing.extractTextAusAnf(m.group(2));
-						getEngine().set(r, m.group(1), value);
-						break;
-	
-					case "click":
-						getEngine().click(r, rest);
-						break;
-	
-					case "extract":
-						setPat = Pattern.compile("(.*) split by (.*) as \"(.*?)\"");
-						m = setPat.matcher(rest);
-						if (!m.matches()) {
-							setPat = Pattern.compile("(.*) split by (.*)");
-							m = setPat.matcher(rest);
-						}
-						if (!m.matches()) {
-							throw new IllegalStateException("Befehl ist ungültig");
-						}
-						if (m.groupCount() == 3) {
-							System.out.println(m.group(3));
-						}
-						getEngine().extract(r, m.group(1), m.group(2));
-						downloads.add(r.page);
-						break;
-	
-					case "download":
-						getEngine().download(r, rest);
-						downloads.add(r.page);
-						break;
+				case "engine":
+					switch (rest.toLowerCase()) {
+					case "htmlunit": engine = new HUEngine(); break;
+					case "phantomjsdriver": engine = new PjsEngine(); break;
+					default:
+						throw new IllegalStateException("Unbekannte Engine: " + rest);
+					}
+					break;
+				case "var":
+					Pattern varPat = Pattern.compile("(.*)=(.*)");
+					Matcher mvar = varPat.matcher(rest);
+					if (!mvar.matches()) {
+						throw new IllegalStateException("Befehl ist ungültig1: " + rest);
+					}
+					addVar(mvar.group(1), mvar.group(2));
+					break;
+				case "cfg":
+					Pattern cfgPat = Pattern.compile("(.*)=(.*)");
+					Matcher m = cfgPat.matcher(rest);
+					if (!m.matches()) {
+						throw new IllegalStateException("Befehl ist ungültig1: " + rest);
+					}
+					getEngine().setCfg(m.group(1), m.group(2));
+					break;
 
-					case "ask":
-						setPat = Pattern.compile("\"(.*?)\" (.*)");
+				case "open":
+					String openurl = Parsing.extractTextAusAnf(parts[1]);
+					r.action = "Open " + openurl;
+					getEngine().open(r, openurl);
+					break;
+
+				case "set":
+					Pattern setPat = Pattern.compile("(.*) to value (.*)");
+					m = setPat.matcher(rest);
+					if (!m.matches()) {
+						throw new IllegalStateException("Befehl ist ungültig");
+					}
+					String value = Parsing.extractTextAusAnf(m.group(2));
+					getEngine().set(r, m.group(1), value);
+					break;
+
+				case "click":
+					getEngine().click(r, rest);
+					break;
+
+				case "extract":
+					setPat = Pattern.compile("(.*) split by (.*) as \"(.*?)\"");
+					m = setPat.matcher(rest);
+					if (!m.matches()) {
+						setPat = Pattern.compile("(.*) split by (.*)");
 						m = setPat.matcher(rest);
-						if (!m.matches()) {
-							throw new IllegalStateException("Befehl ist ungültig");
-						}
-						System.out.println(m.group(1));
-						System.out.println(m.group(2));
-						List<ImmutablePair<String, String>> pp = getEngine().getOptions(r, m.group(2));
-						ImmutablePair<String, String> auswahl = askFeedback(m.group(1), pp);
-						engine.setOptionByText(r, m.group(2), auswahl.right);
-						downloads.add(r.page);
-						break;
-						
-					case "downloadfromurl":
-						getEngine().downloadfromurl(r, rest);
-						downloads.add(r.page);
-						break;
-						//				case "removeattribute":
-						//					m = removeattribut.matcher(rest);
-						//					if (!m.matches()) {
-						//						throw new IllegalStateException("Befehl ist ungültig");
-						//					}
-						//					String attrName = m.group(1);
-						//					String get = m.group(2);
-						//					getEngine().removeAttribute(r, attrName, get);
-						//					break;
-	
-					case "assertexists":
-						String fehlermeldung = Parsing.extractTextAusAnf(rest);
-						rest = rest.substring(fehlermeldung.length() + 2 + 1); // +2 wegen den fehlenden Anführungsstrichen in fehlermeldung
-						if (rest.trim().isEmpty()) {
-							throw new IllegalStateException("Zweiter Teil des Befehles nicht gefunden! " + codeline);
-						}
-						if (!getEngine().assertexists(r, rest)) {
-							throw new IllegalStateException(fehlermeldung);
-						}
-						results.remove(r); // Assertexists werden nicht gespeichert
-						break;
-						
-					case "if":
-						setPat = Pattern.compile("(exists|not exists) (.*) goto (.*)");
-						m = setPat.matcher(rest);
-						if (!m.matches()) {
-							throw new IllegalStateException("Befehl ist ungültig");
-						}
-						int count = getEngine().count(r, m.group(2));
-						r.txt = "Count: " + count;
-						boolean jump;
-						switch (m.group(1)) {
-							case "exists": jump = (count > 0); break;
-							case "not exists": jump = (count == 0); break;
-							default: throw new IllegalStateException("Unbekannte If-Bedingung: " + m.group(1));
-						}
-						if (jump) {
-							jumpto = m.group(3);
+					}
+					if (!m.matches()) {
+						throw new IllegalStateException("Befehl ist ungültig");
+					}
+					if (m.groupCount() == 3) {
+						System.out.println(m.group(3));
+					}
+					getEngine().extract(r, m.group(1), m.group(2));
+					downloads.add(r.page);
+					break;
+
+				case "download":
+					String charset = null;
+					String xpath = null;
+					setPat = Pattern.compile("(.*) charset \"(.*?)\"");
+					m = setPat.matcher(rest);
+					if (m.matches()) {
+						xpath = m.group(1);
+						charset = m.group(2);
+					} else {
+						xpath = rest;
+					}
+					getEngine().download(r, xpath, charset);
+					System.out.println(r.page.toString());
+					downloads.add(r.page);
+					break;
+
+				case "ask":
+					setPat = Pattern.compile("\"(.*?)\" (.*)");
+					m = setPat.matcher(rest);
+					if (!m.matches()) {
+						throw new IllegalStateException("Befehl ist ungültig");
+					}
+					System.out.println(m.group(1));
+					System.out.println(m.group(2));
+					List<ImmutablePair<String, String>> pp = getEngine().getOptions(r, m.group(2));
+					ImmutablePair<String, String> auswahl = askFeedback(m.group(1), pp);
+					engine.setOptionByText(r, m.group(2), auswahl.right);
+					break;
+
+				case "downloadfromurl":
+					getEngine().downloadfromurl(r, rest);
+					downloads.add(r.page);
+					break;
+
+				case "assertexists":
+					String fehlermeldung = Parsing.extractTextAusAnf(rest);
+					rest = rest.substring(fehlermeldung.length() + 2 + 1); // +2 wegen den fehlenden Anführungsstrichen in fehlermeldung
+					if (rest.trim().isEmpty()) {
+						throw new IllegalStateException("Zweiter Teil des Befehles nicht gefunden! " + codeline);
+					}
+					if (!getEngine().assertexists(r, rest)) {
+						throw new IllegalStateException(fehlermeldung);
+					}
+					results.remove(r); // Assertexists werden nicht gespeichert
+					break;
+					
+				case "sleep":
+					Thread.sleep(5000);
+					break;
+					
+				case "if":
+					setPat = Pattern.compile("(exists|not exists) (.*) goto (.*)");
+					m = setPat.matcher(rest);
+					if (!m.matches()) {
+						throw new IllegalStateException("Befehl ist ungültig");
+					}
+					int count = getEngine().count(r, m.group(2));
+					r.txt = "Count: " + count;
+					boolean jump;
+					switch (m.group(1)) {
+					case "exists": jump = (count > 0); break;
+					case "not exists": jump = (count == 0); break;
+					default: throw new IllegalStateException("Unbekannte If-Bedingung: " + m.group(1));
+					}
+					if (jump) {
+						jumpto = m.group(3);
+					}
+					break;
+					
+				case "fix":
+					switch (rest.toLowerCase()) {
+					case "dh4096":
+						if (engine instanceof HUEngine) {
+							((HUEngine) engine).fixdh4096();
+						} else {
+							throw new IllegalStateException("Fix wird für diese Engine nicht unterstützt." + rest);
 						}
 						break;
 					default:
-						throw new IllegalStateException("Unbekannter Befehl: " + codeline);
+						throw new IllegalStateException("Unbekannter Fix" + rest);
+					}
+					break;
+
+				default:
+					throw new IllegalStateException("Unbekannter Befehl: " + codeline);
 				}
 				//Thread.sleep(3000);
 				getEngine().enrichWithDebuginfo(r);
@@ -280,7 +307,7 @@ public abstract class Runner {
 		return codeline;
 	}
 
-	
+
 	protected void finish() {
 
 	}
@@ -308,7 +335,7 @@ public abstract class Runner {
 
 	public ImmutablePair<String, String> askFeedback(String configName, List<ImmutablePair<String, String>> pp) {
 		throw new IllegalStateException("AskFeedback nicht implementiert");
-		
+
 	}
 
 }

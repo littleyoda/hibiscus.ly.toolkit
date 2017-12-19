@@ -1,21 +1,31 @@
 package de.open4me.ly.webscraper.runner.htmlunit;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
+
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.BrowserVersion.BrowserVersionBuilder;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.ImmediateRefreshHandler;
 import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
 import com.gargoylesoftware.htmlunit.ThreadedRefreshHandler;
+import com.gargoylesoftware.htmlunit.UnexpectedPage;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
@@ -32,25 +42,70 @@ public class HUEngine extends Engine {
 	private WebClient webClient;
 	private HtmlPage page = null;
 	private int jswait = 0;
+	private Map<String, String> cfgs;
 
 	@Override
 	public void init() {
 		super.init();
-		webClient = new WebClient(BrowserVersion.BEST_SUPPORTED);
+		cfgs = new HashMap<String, String>();
+	}
+
+
+	private WebClient getwebClient() {
+		if (webClient != null) {
+			return webClient;
+		}
+		BrowserVersionBuilder bv = new BrowserVersion.BrowserVersionBuilder(BrowserVersion.BEST_SUPPORTED);
+		if (cfgs.containsKey("language")) {
+			String value = cfgs.get("language");
+			bv = bv.setBrowserLanguage(value).setSystemLanguage(value).setUserLanguage(value);
+			cfgs.remove("language");
+		}
+		if (cfgs.containsKey("browser")) {
+			String value = cfgs.get("browser");
+			bv = bv.setUserAgent(value);
+			cfgs.remove("browser");
+		}
+		webClient = new WebClient(bv.build());
 		webClient.setCssErrorHandler(new SilentCssErrorHandler());
 		webClient.getOptions().setJavaScriptEnabled(true);
 		webClient.setRefreshHandler(new ThreadedRefreshHandler());
 		webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.setCssErrorHandler(new SilentCssErrorHandler());
+		for (Entry<String, String> x : cfgs.entrySet()) {
+			applyCfgs(x.getKey(), x.getValue());
+		}
+		cfgs = null;
+		return webClient;
 	}
 
 	@Override
 	public void setCfg(String key, String value) {
 		switch (key.toLowerCase()) {
 		case "browser":
-			webClient.getBrowserVersion().setUserAgent(value);
-			break;
+		case "waitforjavascript":
+		case "javascript":
+		case "css":
+		case "ajax":
+		case "language":
+		case "redirect":
+		case "refresh":
+		case "showversion":
+			if (cfgs != null) {
+				// Config-File zwischenspeichern
+				cfgs.put(key, value);
+			} else {
+				// Webclient ist bereicht instanziert worden. Config direkt setzten 
+				applyCfgs(key, value);
+			}
+		default:
+			throw new IllegalStateException("Befehl ist ungültig. Diese Einstellung ist unbekannt: " + key);
+		}
+	}
+
+	public void applyCfgs(String key, String value) {
+		switch (key.toLowerCase()) {
 		case "waitforjavascript":
 			jswait = Integer.parseInt(value) * 1000;
 			break;
@@ -64,11 +119,6 @@ public class HUEngine extends Engine {
 			if (Boolean.parseBoolean(value)) {
 				webClient.setAjaxController(new NicelyResynchronizingAjaxController());
 			} 
-			break;
-		case "language":
-			webClient.getBrowserVersion().setBrowserLanguage(value);
-			webClient.getBrowserVersion().setSystemLanguage(value);
-			webClient.getBrowserVersion().setUserLanguage(value);
 			break;
 		case "redirect":
 			webClient.getOptions().setRedirectEnabled(Boolean.parseBoolean(value));
@@ -84,16 +134,16 @@ public class HUEngine extends Engine {
 			break;
 
 		default:
-			throw new IllegalStateException("Befehl ist ungültig. Diese Einstellung ist unbekannt: " + key);
+			throw new IllegalStateException("Befehl ist ungültig. Diese Einstellung ist unbekannt oder wurde zu spät gesendet: " + key);
 		}
 	}
 
 	@Override
 	public void open(ResultSets r, String openurl) {
 		try {
-			page = webClient.getPage(openurl);
+			page = getwebClient().getPage(openurl);
 			if (jswait > 0) {
-				webClient.waitForBackgroundJavaScript(jswait);
+				getwebClient().waitForBackgroundJavaScript(jswait);
 			}
 			r.page = page.cloneNode(true);
 			r.url = page.getUrl();
@@ -103,7 +153,7 @@ public class HUEngine extends Engine {
 		}
 	}
 
-	
+
 	@SuppressWarnings("rawtypes")
 	public static List<?> getElements(HtmlPage page, String string) {
 		Matcher m = Parsing.befehlMitKlammer.matcher(string);
@@ -135,7 +185,7 @@ public class HUEngine extends Engine {
 			throw new IllegalStateException("Befehl " + m.group(1) + " ist unbekannt!");
 		}
 	}
-	
+
 	private static List<HtmlElement> getAllHtmlElements(HtmlPage page) {
 		List<HtmlElement> out = new ArrayList<HtmlElement>();
 		for (Object o : page.getByXPath("//*")) {
@@ -155,7 +205,7 @@ public class HUEngine extends Engine {
 			throw new IllegalStateException("Element " + selector + " nicht gefunden");
 		}
 		for (Object x : elements) {
-//			String value = extractTextAusAnf(m.group(2));
+			//			String value = extractTextAusAnf(m.group(2));
 			if (x instanceof HtmlInput) {
 				((HtmlInput) x).setAttribute("value", value);
 			} else if (x instanceof HtmlSelect) {
@@ -212,7 +262,7 @@ public class HUEngine extends Engine {
 		r.txt = out;
 		r.page = new StringPage(out);
 	}
-	
+
 
 	public static List<?> getElements(HtmlElement page, String string) {
 		Matcher m = Parsing.befehlMitKlammer.matcher(string);
@@ -246,7 +296,7 @@ public class HUEngine extends Engine {
 	}
 
 	@Override
-	public void download(ResultSets r, String rest) {
+	public void download(ResultSets r, String rest, String charset) {
 		List<?> elements = getElements(page, rest);
 		if (elements.size() == 0) {
 			throw new IllegalStateException("Kein Element gefunden!" + rest);
@@ -261,6 +311,16 @@ public class HUEngine extends Engine {
 			p = ((HtmlElement) dl).click();
 			r.page = p;
 			r.url = p.getUrl();
+			if (p instanceof UnexpectedPage) {
+				UnexpectedPage u = (UnexpectedPage) p;
+				if (charset == null) {
+					r.txt = u.getWebResponse().getContentAsString();
+				} else {
+					Charset c = Charset.forName(charset);
+					r.txt = u.getWebResponse().getContentAsString(c);
+				}
+				r.page = new StringPage(r.txt);
+			}
 		} catch (IOException e) {
 			r.e = e;
 		}
@@ -269,18 +329,18 @@ public class HUEngine extends Engine {
 	@Override
 	public boolean assertexists(ResultSets r, String rest) {
 		List<?> elements = getElements(page, rest);
-//		Logger.error("assertExists: " + fehlermeldung + " " + rest + " " + elements.toString());
+		//		Logger.error("assertExists: " + fehlermeldung + " " + rest + " " + elements.toString());
 		return (elements.size() > 0);
 	}
 
 	@Override
 	public int count(ResultSets r, String rest) {
 		List<?> elements = getElements(page, rest);
-//		Logger.error("assertExists: " + fehlermeldung + " " + rest + " " + elements.toString());
+		//		Logger.error("assertExists: " + fehlermeldung + " " + rest + " " + elements.toString());
 		return elements.size();
 	}
-	
-	
+
+
 	@Override
 	public void enrichWithDebuginfo(ResultSets r) {
 		if (page != null) {
@@ -312,23 +372,45 @@ public class HUEngine extends Engine {
 		throw new IllegalStateException("Nicht implementiert");
 	}
 
-	
+
 	@Override
 	public void setOptionByText(ResultSets r, String selector, String optiontext) {
 		throw new IllegalStateException("Nicht implementiert");
 	}
 
-//	@Override
-//	public void removeAttribute(ResultSets r, String attrName, String get) {
-//		List<?> elements = getElements(page, get);
-//		for (Object o : elements) {
-//			if (!(o instanceof HtmlElement)) {
-//				throw new IllegalStateException("Element nicht vom Typ HtmlElement.\n");
-//			}
-//			((HtmlInput) o).removeAttribute(attrName);
-//		}
-//	}
+	public void fixdh4096() {
+		// Extract all Cipher Suites
+		SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+		SSLSocket soc;
+		try {
+			soc = (SSLSocket) factory.createSocket();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new IllegalStateException("Fix DH4096 konnte nicht ausgeführt werden." + e.getMessage());
+		}
+		String[] protocols = soc.getEnabledCipherSuites();
 
-	
-	
+		// Remove all DH Cipher Suites
+		ArrayList<String> list = new ArrayList<>(Arrays.asList(protocols));
+		List<String> newlist = list.stream()
+				.filter(p -> !(p.contains("_DHE_") ))
+				.collect(Collectors.toList());
+		// Set the filtered list as default for HTMLUnit
+		getwebClient().getOptions().setSSLClientCipherSuites(newlist.toArray(new String[newlist.size()]));
+
+	}
+
+	//	@Override
+	//	public void removeAttribute(ResultSets r, String attrName, String get) {
+	//		List<?> elements = getElements(page, get);
+	//		for (Object o : elements) {
+	//			if (!(o instanceof HtmlElement)) {
+	//				throw new IllegalStateException("Element nicht vom Typ HtmlElement.\n");
+	//			}
+	//			((HtmlInput) o).removeAttribute(attrName);
+	//		}
+	//	}
+
+
+
 }

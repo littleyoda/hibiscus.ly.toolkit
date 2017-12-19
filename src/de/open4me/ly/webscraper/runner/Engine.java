@@ -26,7 +26,7 @@ public abstract class Engine {
 
 	public abstract void extract(ResultSets r, String selector, String split);
 
-	public abstract void download(ResultSets r, String rest);
+	public abstract void download(ResultSets r, String rest, String charset);
 
 	public abstract boolean assertexists(ResultSets r, String rest);
 

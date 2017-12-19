@@ -92,7 +92,7 @@ public class PjsEngine extends Engine {
 			throw new IllegalStateException("Kein Element gefunden!" + rest);
 		}
 		WebElement x = PjsUtils.getEnabledVisibled(elements);
-		if (elements.size() == 0) {
+		if (x == null) {
 			throw new IllegalStateException("Kein Element (Visible & Enabled) gefunden!" + rest + " " + elements);
 		}
 		x.click();
@@ -138,7 +138,7 @@ public class PjsEngine extends Engine {
 
 
 	@Override
-	public void download(ResultSets r, String selector) {
+	public void download(ResultSets r, String selector, String charset) {
 		List<WebElement> elements = getElements(selector);
 		if (elements.size() == 0) {
 			throw new IllegalStateException("Kein Element gefunden!" + selector);

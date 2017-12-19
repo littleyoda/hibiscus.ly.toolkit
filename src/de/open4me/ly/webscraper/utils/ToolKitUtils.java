@@ -7,9 +7,36 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import de.willuhn.logging.Logger;
 
 
 public class ToolKitUtils {
+
+	static public BigDecimal betrag2BigDecimal(String value) throws ParseException {
+		String l1 = "de";
+		String l2 = "DE";
+		char kommaZeichen = '\0';
+		for (int idx = value.length() - 1; idx > 0; idx--) {
+			char c = value.charAt(idx);
+			if (!Character.isDigit(c)) {
+				kommaZeichen = c;
+				break;
+			}
+		}
+		switch (kommaZeichen) {
+			case '\0':
+			case ',':
+				// Use Default
+				break;
+			case '.':
+				l1 = "en";
+				l2 = "US";
+				break;
+			default:
+				Logger.error("Unbekanntes Zeichen in einer Zahl gefunden: " + kommaZeichen);
+		}
+		return betrag2BigDecimal(value, l1, l2);
+	}
 
 	static public BigDecimal betrag2BigDecimal(String value, String formatlocale, String formatlocale2 ) throws ParseException {
 		if (value.startsWith("+")) {
