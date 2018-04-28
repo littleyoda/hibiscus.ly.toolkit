@@ -32,8 +32,8 @@ import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlSelect;
 
-import de.open4me.ly.webscraper.runner.Engine;
 import de.open4me.ly.webscraper.runner.Runner.ResultSets;
+import de.open4me.ly.webscraper.runner.base.Engine;
 import de.open4me.ly.webscraper.utils.Parsing;
 import de.open4me.ly.webscraper.utils.StringPage;
 
@@ -96,9 +96,10 @@ public class HUEngine extends Engine {
 				// Config-File zwischenspeichern
 				cfgs.put(key, value);
 			} else {
-				// Webclient ist bereicht instanziert worden. Config direkt setzten 
+				// Webclient ist bereits instanziert worden. Config direkt setzten 
 				applyCfgs(key, value);
 			}
+			break;
 		default:
 			throw new IllegalStateException("Befehl ist ungültig. Diese Einstellung ist unbekannt: " + key);
 		}
@@ -249,8 +250,12 @@ public class HUEngine extends Engine {
 		String out = "";
 		int i = 0;
 		for (Object zeile : elements) {
+			List<?> list = getElements((HtmlElement) zeile, split);
+			if (list.size() == 0) {
+				continue;
+			}
 			out += i;
-			for (Object spalten : getElements((HtmlElement) zeile, split)) {
+			for (Object spalten : list) {
 				String c = ((HtmlElement) spalten).getTextContent();
 				c = c.trim().replace('\r', ' ').replace('\t', ' ').replace('\n', ' ').replaceAll("\"", "'").trim();
 				out +=  ",\"" + c + "\"";
@@ -378,6 +383,11 @@ public class HUEngine extends Engine {
 		throw new IllegalStateException("Nicht implementiert");
 	}
 
+	@Override
+	public void closeWindow() {
+		throw new IllegalStateException("Nicht implementiert");
+	}
+
 	public void fixdh4096() {
 		// Extract all Cipher Suites
 		SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
@@ -400,17 +410,10 @@ public class HUEngine extends Engine {
 
 	}
 
-	//	@Override
-	//	public void removeAttribute(ResultSets r, String attrName, String get) {
-	//		List<?> elements = getElements(page, get);
-	//		for (Object o : elements) {
-	//			if (!(o instanceof HtmlElement)) {
-	//				throw new IllegalStateException("Element nicht vom Typ HtmlElement.\n");
-	//			}
-	//			((HtmlInput) o).removeAttribute(attrName);
-	//		}
-	//	}
 
-
+	@Override
+	public void submit(String selector) {
+		throw new IllegalStateException("Nicht implementiert");
+	}
 
 }

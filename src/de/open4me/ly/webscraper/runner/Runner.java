@@ -13,6 +13,8 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import com.gargoylesoftware.htmlunit.Page;
 
+import de.open4me.ly.webscraper.runner.base.Engine;
+import de.open4me.ly.webscraper.runner.chromejsdriver.CEngine;
 import de.open4me.ly.webscraper.runner.htmlunit.HUEngine;
 import de.open4me.ly.webscraper.runner.phantomjsdriver.PjsEngine;
 import de.open4me.ly.webscraper.utils.Parsing;
@@ -98,6 +100,7 @@ public abstract class Runner {
 					switch (rest.toLowerCase()) {
 					case "htmlunit": engine = new HUEngine(); break;
 					case "phantomjsdriver": engine = new PjsEngine(); break;
+					case "chromedriver": engine = new CEngine(); break;
 					default:
 						throw new IllegalStateException("Unbekannte Engine: " + rest);
 					}
@@ -190,6 +193,10 @@ public abstract class Runner {
 					downloads.add(r.page);
 					break;
 
+				case "closewindow":
+					getEngine().closeWindow();
+					break;
+					
 				case "assertexists":
 					String fehlermeldung = Parsing.extractTextAusAnf(rest);
 					rest = rest.substring(fehlermeldung.length() + 2 + 1); // +2 wegen den fehlenden Anführungsstrichen in fehlermeldung
@@ -202,8 +209,24 @@ public abstract class Runner {
 					results.remove(r); // Assertexists werden nicht gespeichert
 					break;
 					
+				case "assertnotexists":
+					fehlermeldung = Parsing.extractTextAusAnf(rest);
+					rest = rest.substring(fehlermeldung.length() + 2 + 1); // +2 wegen den fehlenden Anführungsstrichen in fehlermeldung
+					if (rest.trim().isEmpty()) {
+						throw new IllegalStateException("Zweiter Teil des Befehles nicht gefunden! " + codeline);
+					}
+					if (getEngine().assertexists(r, rest)) {
+						throw new IllegalStateException(fehlermeldung);
+					}
+					results.remove(r); // Assertexists werden nicht gespeichert
+					break;
+
 				case "sleep":
 					Thread.sleep(5000);
+					break;
+
+				case "submit":
+					getEngine().submit(rest);
 					break;
 					
 				case "if":
@@ -282,9 +305,11 @@ public abstract class Runner {
 
 
 	private Engine getEngine() {
+		// default
 		if (engine == null) {
 			engine = new HUEngine();
 		}
+		// Init wenn nötig
 		if (!engine.isinit) {
 			engine.init();
 		}

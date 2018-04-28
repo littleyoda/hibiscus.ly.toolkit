@@ -1,4 +1,4 @@
-package de.open4me.ly.webscraper.runner;
+package de.open4me.ly.webscraper.runner.base;
 
 import java.util.List;
 
@@ -43,5 +43,9 @@ public abstract class Engine {
 	public abstract List<ImmutablePair<String,String>>  getOptions(ResultSets r, String selector);
 	
 	public abstract void setOptionByText(ResultSets r, String selector, String optiontext);
+
+	public abstract void closeWindow();
+
+	public abstract void submit(String selector);
 
 }

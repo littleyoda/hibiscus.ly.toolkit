@@ -11,7 +11,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class PjsUtils {
 
-	public static boolean waitForJSandJQueryToLoad(PhantomJSDriver driver) {
+	public static boolean waitForJSandJQueryToLoad(WebDriver driver) {
 
 	    WebDriverWait wait = new WebDriverWait(driver, 30);
 
@@ -48,4 +48,6 @@ public class PjsUtils {
 		}
 		return null;
 	}
+	
+	
 }
