@@ -13,32 +13,20 @@ public class CEngine extends SeleniumEngine {
 		try {
 			setChromeDriverPaths();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			throw new IllegalStateException("ChromeDriver konnte nicht initalisiert werden!" + e.getMessage());
 		}
-		/*
-		 * ***************************************************************************
-		 * Initalisieren der Verbindung über ChromeDriver mit dem WebClient. Dieser wird hier gleich mit eventuellen Proxy-Einstellungen unter Jameica konfiguriert
-		 */
-		boolean appSysProxyUse = Application.getConfig().getUseSystemProxy();
-		String appProxyHost = Application.getConfig().getProxyHost();
-		int appProxyPort = Application.getConfig().getProxyPort();
-		String appHttpsProxyHost = Application.getConfig().getHttpsProxyHost();
-		int appHttpsProxyPort = Application.getConfig().getHttpsProxyPort();
-
 		try {
-			//        	public static WebDriver connConfig(boolean lowssl, boolean js, boolean websec, Class ExternalLogger, Class ExternalProgressMonitor, boolean appSysProxyUse, String appProxyHost, int appProxyPort, 
-			//                  String appHttpsProxyHost, int appHttpsProxyPort, boolean appProxyAuthUse, String ProxyUser, String ProxyPass, boolean headlessMode)
-
+			boolean appSysProxyUse = Application.getConfig().getUseSystemProxy();
+			String appProxyHost = Application.getConfig().getProxyHost();
+			int appProxyPort = Application.getConfig().getProxyPort();
+			String appHttpsProxyHost = Application.getConfig().getHttpsProxyHost();
+			int appHttpsProxyPort = Application.getConfig().getHttpsProxyPort();
 			driver = ChromeDriverWebClientInit.connConfig(false, true, true, ExternalLogger.class, WebProgressMonitor.class, appSysProxyUse, appProxyHost, appProxyPort, appHttpsProxyHost, appHttpsProxyPort, false, "", "", true);
-			
 		}	
 		catch (Exception webClientError) {
-
-			//           throw new Exception("ChromeDriverWebClientInit fehlerhaft: " + webClientError.getMessage());
-			System.out.println("ChromeDriverWebClientInit fehlerhaft: " + webClientError.getMessage());
+			throw new IllegalStateException("ChromeDriver konnte nicht initalisiert werden!" + webClientError.getMessage());
 		}
-		/* *************************************************************************** */		
 	}
 
 

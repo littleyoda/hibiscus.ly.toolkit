@@ -160,6 +160,7 @@ public abstract class SeleniumEngine extends Engine {
 		
 		List<WebElement> elements = getElements(rest);
 		if (elements.size() == 0) {
+
 			throw new IllegalStateException("Kein Element gefunden! " + rest);
 		}
 		WebElement x = PjsUtils.getEnabledVisibled(elements);
@@ -277,6 +278,11 @@ public abstract class SeleniumEngine extends Engine {
 		}
 	}
 
+	/**
+	 * Verwandelt eine Parameter-Liste in die Post-Request-Notation
+	 * @param param
+	 * @return
+	 */
 	private String paramToString(Map<String, String> param) {
 		return param.entrySet().stream()
 				.map(
@@ -296,6 +302,11 @@ public abstract class SeleniumEngine extends Engine {
 		return elements.get(0);
 	}
 
+	/**
+	 * Iteriert über ein Form Element und extrahiert aus allen Input-Tag die relevanten Informationen
+	 * @param form
+	 * @return
+	 */
 	private Map<String, String> extractParamter(WebElement form) {
 		Map<String,String> params = new LinkedHashMap<>();		
 		for (WebElement xx : getElements(form, "getbyxpath(\".//input\")")) {

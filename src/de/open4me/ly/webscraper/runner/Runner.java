@@ -171,7 +171,6 @@ public abstract class Runner {
 						xpath = rest;
 					}
 					getEngine().download(r, xpath, charset);
-					System.out.println(r.page.toString());
 					downloads.add(r.page);
 					break;
 
@@ -181,8 +180,6 @@ public abstract class Runner {
 					if (!m.matches()) {
 						throw new IllegalStateException("Befehl ist ungültig");
 					}
-					System.out.println(m.group(1));
-					System.out.println(m.group(2));
 					List<ImmutablePair<String, String>> pp = getEngine().getOptions(r, m.group(2));
 					ImmutablePair<String, String> auswahl = askFeedback(m.group(1), pp);
 					engine.setOptionByText(r, m.group(2), auswahl.right);
