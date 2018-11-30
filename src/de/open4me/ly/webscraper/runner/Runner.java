@@ -186,7 +186,7 @@ public abstract class Runner {
 					break;
 
 				case "downloadfromurl":
-					getEngine().downloadfromurl(r, rest);
+					getEngine().downloadfromurl(r, rest, null);
 					downloads.add(r.page);
 					break;
 
@@ -219,7 +219,7 @@ public abstract class Runner {
 					break;
 
 				case "sleep":
-					Thread.sleep(5000);
+					Thread.sleep(2000);
 					break;
 
 				case "submit":

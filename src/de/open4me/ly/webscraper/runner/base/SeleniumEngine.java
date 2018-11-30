@@ -231,7 +231,7 @@ public abstract class SeleniumEngine extends Engine {
 			if (url == null) {
 				throw new IllegalStateException("href attribute missing");
 			}
-			downloadfromurl(r, url);
+			downloadfromurl(r, url, charset);
 		} else {
 			throw new IllegalStateException("Not supported element: " + x.getTagName());
 		}
@@ -261,7 +261,7 @@ public abstract class SeleniumEngine extends Engine {
 				throw new IllegalStateException("Ungültige URL Kombination: " + driver.getCurrentUrl() + " / " + path);
 			}
 			System.out.println("URL: " + url);
-			downloadfromurl(r, url.toString());
+			downloadfromurl(r, url.toString(), null);
 		}
 	}
 
@@ -321,12 +321,15 @@ public abstract class SeleniumEngine extends Engine {
 	}
 
 	@Override
-	public void downloadfromurl(ResultSets r, String url) {
+	public void downloadfromurl(ResultSets r, String url, String charset) {
 		try {
+			if (charset == null) {
+				charset = "UTF-8";
+			}
 			SeleniumDownloadHelper sdlh;
 			sdlh = new SeleniumDownloadHelper(driver);
 			FileData testFileData = sdlh.getFileFromUrlRaw(new URL(url));
-			r.txt = new String(testFileData.getData(), "UTF-8");
+			r.txt = new String(testFileData.getData(), charset);
 			r.page = new StringPage(r.txt);
 		} catch (IOException e) {
 			r.e = e;

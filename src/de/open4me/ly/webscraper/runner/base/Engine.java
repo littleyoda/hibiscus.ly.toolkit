@@ -36,7 +36,7 @@ public abstract class Engine {
 		return isinit;
 	}
 
-	public abstract void downloadfromurl(ResultSets r, String url);
+	public abstract void downloadfromurl(ResultSets r, String url, String charset);
 
 	public abstract int count(ResultSets r, String rest);
 

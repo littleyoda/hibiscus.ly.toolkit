@@ -357,7 +357,7 @@ public class HUEngine extends Engine {
 	}
 
 	@Override
-	public void downloadfromurl(ResultSets r, String url) {
+	public void downloadfromurl(ResultSets r, String url, String charset) {
 		throw new IllegalStateException("Nicht implementiert");
 	}
 
