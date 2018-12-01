@@ -215,6 +215,7 @@ public abstract class SeleniumEngine extends Engine {
 		driver.switchTo().window(windowName);
 	}
 
+	@Override
 	public void download(ResultSets r, String selector, String charset) {
 		List<WebElement> elements = getElements(selector);
 		if (elements.size() == 0) {

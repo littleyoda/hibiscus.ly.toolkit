@@ -1,13 +1,21 @@
 package de.open4me.ly.webscraper.runner.chromejsdriver;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.stream.Stream;
 
 import de.derrichter.finance.websync.connector.ChromeDriverWebClientInit;
+import de.open4me.ly.webscraper.runner.Runner.ResultSets;
 import de.open4me.ly.webscraper.runner.base.SeleniumEngine;
+import de.open4me.ly.webscraper.utils.StringPage;
 import de.willuhn.jameica.system.Application;
 
 public class CEngine extends SeleniumEngine {
 
+	private static File chromeDownloadsDir;
+	
 	public void init() {
 		super.init();
 		try {
@@ -22,8 +30,8 @@ public class CEngine extends SeleniumEngine {
 			int appProxyPort = Application.getConfig().getProxyPort();
 			String appHttpsProxyHost = Application.getConfig().getHttpsProxyHost();
 			int appHttpsProxyPort = Application.getConfig().getHttpsProxyPort();
-//			driver = ChromeDriverWebClientInit.connConfig(false, true, true, ExternalLogger.class, WebProgressMonitor.class, appSysProxyUse, appProxyHost, appProxyPort, appHttpsProxyHost, appHttpsProxyPort, false, "", "", false);
-			driver = ChromeDriverWebClientInit.connConfig(false, true, true, ExternalLogger.class, WebProgressMonitor.class, appSysProxyUse, appProxyHost, appProxyPort, appHttpsProxyHost, appHttpsProxyPort, false, "", "", true);
+			driver = ChromeDriverWebClientInit.connConfig(false, true, true, ExternalLogger.class, WebProgressMonitor.class, appSysProxyUse, appProxyHost, appProxyPort, appHttpsProxyHost, appHttpsProxyPort, false, "", "", false);
+//			driver = ChromeDriverWebClientInit.connConfig(false, true, true, ExternalLogger.class, WebProgressMonitor.class, appSysProxyUse, appProxyHost, appProxyPort, appHttpsProxyHost, appHttpsProxyPort, false, "", "", true);
 		}	
 		catch (Exception webClientError) {
 			throw new IllegalStateException("ChromeDriver konnte nicht initalisiert werden!" + webClientError.getMessage());
@@ -92,7 +100,7 @@ public class CEngine extends SeleniumEngine {
 			System.setProperty("chromedriver.logfile.path", chromeDriverLog.getCanonicalPath());
 			// System.setProperty("chromedriver.logfile.path", System.getProperties().getProperty("java.io.tmpdir") + File.separator + "chromedriverdriver" + File.separator + "chromedriver.log");
 
-			File chromeDownloadsDir = new File(System.getProperty("java.io.tmpdir") + File.separator + "chromedriver-downloads");
+			chromeDownloadsDir = new File(System.getProperty("java.io.tmpdir") + File.separator + "chromedriver-downloads");
 			System.setProperty("chrome.downloads.path", chromeDownloadsDir.getCanonicalPath());
 
 			File chromiumRootFolder = new File(osChromiumDir);
@@ -113,4 +121,29 @@ public class CEngine extends SeleniumEngine {
 			//throw new Exception("SetChromeDriverPaths fehlerhaft: " + error.getMessage());
 		}
 	}
+	
+	@Override
+	public void download(ResultSets r, String selector, String charset) {
+		if (selector.equals("download_Directory")) {
+			File[] x = chromeDownloadsDir.listFiles();
+			if (charset == null) {
+				charset = "UTF-8";
+			}
+			if (x.length == 1) {
+				try {
+					String content = new String (Files.readAllBytes(x[0].toPath()), Charset.forName(charset));
+					r.txt = content;
+					r.page = new StringPage(r.txt);
+					x[0].delete();
+				} catch (IOException e) {
+					throw new IllegalStateException(e);
+				} 
+			} else {
+				throw new IllegalStateException("Zuviele Dateien im Download-Verzeichnis (" + x.length + ")");
+			}
+			return;
+		}
+		super.download(r,  selector, charset);
+	}
+	
 }
