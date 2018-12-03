@@ -6,7 +6,7 @@
         name="hibiscus.ly.toolkit" version="1.0.5" class="de.open4me.ly.webscraper.Plugin">
 
   <description>Library, die von verschiedenen Plugins genutzt wird</description>
-  <url>http://www.open4me.de/hibiscus/hibiscus.ly.toolkit/hibiscus.ly.toolkit.zip</url>
+  <url>https://www.open4me.de/hibiscus/hibiscus.ly.toolkit/hibiscus.ly.toolkit.zip</url>
   <homepage>https://github.com/littleyoda/hibiscus.ly.toolkit</homepage>
   <license></license>
 
