@@ -1,5 +1,6 @@
 package de.open4me.ly.webscraper.runner.base;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -15,7 +16,9 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.openqa.selenium.By;
+import org.openqa.selenium.OutputType;
 import org.openqa.selenium.SearchContext;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
@@ -193,8 +196,26 @@ public abstract class SeleniumEngine extends Engine {
 			throw new IllegalStateException("Kein Element gefunden!" + selector);
 		}
 		WebElement x = elements.get(0);
-		x.clear();
-		x.sendKeys(group2);
+		if ("select".equals(x.getTagName())) {
+			Select dropdown = new Select(x);
+			String options = "";
+			for (WebElement w : dropdown.getOptions()) {
+				System.out.println(w.getText());
+				if (w.getText().trim().equalsIgnoreCase(group2)) {
+					w.click();
+					return;
+				}
+				if (w.getAttribute("value") != null && group2.equalsIgnoreCase(w.getAttribute("value").trim())) {
+					w.click();
+					return;
+				}
+				options += "[" + w.getText() + "/" + w.getAttribute("value") + "] ";
+			}
+			throw new IllegalStateException("Option " + group2 + " nicht gefunden! Vorhanden " + options);
+		} else {
+			x.clear();
+			x.sendKeys(group2);
+		}
 	}
 
 	@Override
@@ -204,7 +225,7 @@ public abstract class SeleniumEngine extends Engine {
 			language = value;
 			break;
 		default:
-			throw new IllegalStateException("Befehl ist ungültig. Diese Einstellung ist unbekannt: " + key);
+			throw new IllegalStateException("Befehl ist ungültig. Diese Einstellung ist unbekannt oder wird zum falschen Zeitpunkt aufgerufen: " + key);
 		}
 	}
 
@@ -350,6 +371,13 @@ public abstract class SeleniumEngine extends Engine {
 		x.submit();
 	}
 
-	
+	public void screenshot() {
+		if (driver instanceof TakesScreenshot) {
+			File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+			System.out.println(scrFile.getAbsolutePath());
+		} else {
+			throw new IllegalStateException("TakeScreenshot not supported");
+		}
+	}
 	
 }

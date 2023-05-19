@@ -4,7 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.stream.Stream;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import de.derrichter.finance.websync.connector.ChromeDriverWebClientInit;
 import de.open4me.ly.webscraper.runner.Runner.ResultSets;
@@ -16,8 +17,9 @@ public class CEngine extends SeleniumEngine {
 
 	private static File chromeDownloadsDir;
 	
-	public void init() {
-		super.init();
+	@Override
+	public void init(HashMap<String, String> cfg) {
+		super.init(cfg);
 		try {
 			setChromeDriverPaths();
 		} catch (Exception e) {
@@ -30,16 +32,19 @@ public class CEngine extends SeleniumEngine {
 			int appProxyPort = Application.getConfig().getProxyPort();
 			String appHttpsProxyHost = Application.getConfig().getHttpsProxyHost();
 			int appHttpsProxyPort = Application.getConfig().getHttpsProxyPort();
-//			driver = ChromeDriverWebClientInit.connConfig(false, true, true, ExternalLogger.class, WebProgressMonitor.class, appSysProxyUse, appProxyHost, appProxyPort, appHttpsProxyHost, appHttpsProxyPort, false, "", "", false);
-			driver = ChromeDriverWebClientInit.connConfig(false, true, true, ExternalLogger.class, WebProgressMonitor.class, appSysProxyUse, appProxyHost, appProxyPort, appHttpsProxyHost, appHttpsProxyPort, false, "", "", true);
+			boolean show = !Boolean.parseBoolean(cfg.getOrDefault("show", "false"));
+			cfg.remove("show");
+			driver = ChromeDriverWebClientInit.connConfig(false, true, true, ExternalLogger.class, WebProgressMonitor.class, appSysProxyUse, appProxyHost, appProxyPort, appHttpsProxyHost, appHttpsProxyPort, false, "", "", show);
 		}	
 		catch (Exception webClientError) {
 			throw new IllegalStateException("ChromeDriver konnte nicht initalisiert werden!" + webClientError.getMessage());
 		}
+		for (Entry<String, String> x : cfg.entrySet()) {
+			setCfg(x.getKey(), x.getValue());
+		}
 	}
 
-
-
+	
 	public static void setChromeDriverPaths() throws Exception {
 
 		try {

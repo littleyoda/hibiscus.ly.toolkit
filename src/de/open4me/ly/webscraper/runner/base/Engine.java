@@ -1,5 +1,6 @@
 package de.open4me.ly.webscraper.runner.base;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -10,7 +11,7 @@ public abstract class Engine {
 
 
 	public boolean isinit = false;
-	public void init() {
+	public void init(HashMap<String, String> cfg) {
 		isinit = true;
 	}
 
@@ -31,6 +32,10 @@ public abstract class Engine {
 	public abstract boolean assertexists(ResultSets r, String rest);
 
 	public abstract void enrichWithDebuginfo(ResultSets r);
+	
+	public void screenshot() {
+		
+	}
 
 	public boolean isInit() {
 		return isinit;

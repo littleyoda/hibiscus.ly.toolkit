@@ -9,14 +9,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.gargoylesoftware.htmlunit.ProxyConfig;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.DomElement;
-import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlTable;
-import com.gargoylesoftware.htmlunit.html.HtmlTableCell;
-import com.gargoylesoftware.htmlunit.html.HtmlTableRow;
+import org.htmlunit.ProxyConfig;
+import org.htmlunit.WebClient;
+import org.htmlunit.html.DomElement;
+import org.htmlunit.html.HtmlAnchor;
+import org.htmlunit.html.HtmlPage;
+import org.htmlunit.html.HtmlTable;
+import org.htmlunit.html.HtmlTableCell;
+import org.htmlunit.html.HtmlTableRow;
 
 import de.willuhn.jameica.system.Application;
 import de.willuhn.logging.Logger;
@@ -64,7 +64,7 @@ public class HUUtils {
 
 	public static HtmlAnchor getLinksByLinkText(HtmlPage page, String search) {
 		for (HtmlAnchor x : page.getAnchors()) {
-			if (x.asText().contains(search)) {
+			if (x.asNormalizedText().contains(search)) {
 				return x;
 			}
 		}
@@ -76,10 +76,10 @@ public class HUUtils {
 		for (HtmlTableRow row :tab.getRows()) {
 			List<HtmlTableCell> cells = row.getCells();
 			if (cells.size() < Math.max(idxname, idxvalue)) {
-				Logger.info("Warnung. Ungültige Anzahl an Zellen: " + cells.size() + " " + row.asText());
+				Logger.info("Warnung. Ungültige Anzahl an Zellen: " + cells.size() + " " + row.asNormalizedText());
 				continue;
 			}
-			infos.put(cells.get(idxname).asText().toLowerCase(), cells.get(idxvalue).asText().trim());
+			infos.put(cells.get(idxname).asNormalizedText().toLowerCase(), cells.get(idxvalue).asNormalizedText().trim());
 		}
 	}
 
@@ -97,12 +97,12 @@ public class HUUtils {
 			}
 			int missing=0;
 			for (int i = 0; i < r1.size(); i++) {
-				String header = r1.get(i).asText().toLowerCase();
+				String header = r1.get(i).asNormalizedText().toLowerCase();
 				if ("".equals(header)) {
 					header = "Missing" + missing;
 					missing++;
 				}
-				infos.put(header, r2.get(i).asText().trim());
+				infos.put(header, r2.get(i).asNormalizedText().trim());
 			}
 		}
 	}

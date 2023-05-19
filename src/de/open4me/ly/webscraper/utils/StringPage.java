@@ -1,6 +1,6 @@
 package de.open4me.ly.webscraper.utils;
 
-import com.gargoylesoftware.htmlunit.TextPage;
+import org.htmlunit.TextPage;
 
 public class StringPage extends TextPage {
 

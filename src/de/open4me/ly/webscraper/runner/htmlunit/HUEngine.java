@@ -1,6 +1,7 @@
 package de.open4me.ly.webscraper.runner.htmlunit;
 
 import java.io.IOException;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,20 +18,20 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
-import com.gargoylesoftware.htmlunit.BrowserVersion;
-import com.gargoylesoftware.htmlunit.BrowserVersion.BrowserVersionBuilder;
-import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
-import com.gargoylesoftware.htmlunit.ImmediateRefreshHandler;
-import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
-import com.gargoylesoftware.htmlunit.Page;
-import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
-import com.gargoylesoftware.htmlunit.ThreadedRefreshHandler;
-import com.gargoylesoftware.htmlunit.UnexpectedPage;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlInput;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlSelect;
+import org.htmlunit.BrowserVersion;
+import org.htmlunit.BrowserVersion.BrowserVersionBuilder;
+import org.htmlunit.FailingHttpStatusCodeException;
+import org.htmlunit.ImmediateRefreshHandler;
+import org.htmlunit.NicelyResynchronizingAjaxController;
+import org.htmlunit.Page;
+import org.htmlunit.SilentCssErrorHandler;
+import org.htmlunit.ThreadedRefreshHandler;
+import org.htmlunit.UnexpectedPage;
+import org.htmlunit.WebClient;
+import org.htmlunit.html.HtmlElement;
+import org.htmlunit.html.HtmlInput;
+import org.htmlunit.html.HtmlPage;
+import org.htmlunit.html.HtmlSelect;
 
 import de.open4me.ly.webscraper.runner.Runner.ResultSets;
 import de.open4me.ly.webscraper.runner.base.Engine;
@@ -45,9 +46,10 @@ public class HUEngine extends Engine {
 	private Map<String, String> cfgs;
 
 	@Override
-	public void init() {
-		super.init();
+	public void init(HashMap<String, String> cfg) {
+		super.init(cfg);
 		cfgs = new HashMap<String, String>();
+		cfgs.putAll(cfg);
 	}
 
 
@@ -351,7 +353,7 @@ public class HUEngine extends Engine {
 		if (page != null) {
 			r.htmlcode = page.asXml();
 			if (r.txt == null) {
-				r.txt = page.asText();
+				r.txt = page.asNormalizedText();
 			}
 		}
 	}

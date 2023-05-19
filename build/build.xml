@@ -34,13 +34,17 @@
 
 		<path id="compilepath">
 			<pathelement path="${define.compilepath}" />
-<!--		      <fileset dir="." >
-        		<include name="${lib.dir}/**/*.jar" if="havelib"/>
-      		      </fileset>-->
+		      <fileset dir="lib" >
+        		<include name="**/*.jar" />
+      		      </fileset>
 		      <fileset dir="${define.htmlunit.dir}/lib" >
        			 <include name="**/*.jar" />
       		      </fileset>
+		      <fileset dir="${define.selenium}/lib" >
+       			 <include name="**/*.jar" />
+      		      </fileset>
 		</path>
+
 
 	</target>
 

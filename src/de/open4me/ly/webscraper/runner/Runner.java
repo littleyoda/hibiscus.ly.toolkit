@@ -1,6 +1,7 @@
 package de.open4me.ly.webscraper.runner;
 
 import java.net.URL;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,12 +12,11 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
-import com.gargoylesoftware.htmlunit.Page;
+import org.htmlunit.Page;
 
 import de.open4me.ly.webscraper.runner.base.Engine;
 import de.open4me.ly.webscraper.runner.chromejsdriver.CEngine;
 import de.open4me.ly.webscraper.runner.htmlunit.HUEngine;
-import de.open4me.ly.webscraper.runner.phantomjsdriver.PjsEngine;
 import de.open4me.ly.webscraper.utils.Parsing;
 import de.willuhn.logging.Logger;
 
@@ -40,6 +40,7 @@ public abstract class Runner {
 
 	}
 
+	private HashMap<String, String> cfg = new HashMap<String, String>();
 	private String[] codelines;
 
 	public Runner() {
@@ -99,11 +100,14 @@ public abstract class Runner {
 				case "engine":
 					switch (rest.toLowerCase()) {
 					case "htmlunit": engine = new HUEngine(); break;
-					case "phantomjsdriver": engine = new PjsEngine(); break;
+				//	case "phantomjsdriver": engine = new PjsEngine(); break;
 					case "chromedriver": engine = new CEngine(); break;
 					default:
 						throw new IllegalStateException("Unbekannte Engine: " + rest);
 					}
+					break;
+				case "screenshot":
+					engine.screenshot();
 					break;
 				case "var":
 					Pattern varPat = Pattern.compile("(.*)=(.*)");
@@ -119,7 +123,7 @@ public abstract class Runner {
 					if (!m.matches()) {
 						throw new IllegalStateException("Befehl ist ungültig1: " + rest);
 					}
-					getEngine().setCfg(m.group(1), m.group(2));
+					setCfg(m.group(1), m.group(2));
 					break;
 
 				case "open":
@@ -301,6 +305,14 @@ public abstract class Runner {
 	}
 
 
+	private void setCfg(String key, String value) {
+		if (engine == null) {
+			cfg.put(key, value);
+		} else {
+			engine.setCfg(key, value);
+		}
+	}
+
 	private Engine getEngine() {
 		// default
 		if (engine == null) {
@@ -308,7 +320,7 @@ public abstract class Runner {
 		}
 		// Init wenn nötig
 		if (!engine.isinit) {
-			engine.init();
+			engine.init(cfg);
 		}
 		return engine;
 	}

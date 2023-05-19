@@ -1,11 +1,12 @@
 package de.open4me.ly.webscraper.runner.phantomjsdriver;
 
+import java.time.Duration;
 import java.util.List;
+
 
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -13,7 +14,7 @@ public class PjsUtils {
 
 	public static boolean waitForJSandJQueryToLoad(WebDriver driver) {
 
-	    WebDriverWait wait = new WebDriverWait(driver, 30);
+	    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
 
 	    // wait for jQuery to load
 	    ExpectedCondition<Boolean> jQueryLoad = new ExpectedCondition<Boolean>() {
