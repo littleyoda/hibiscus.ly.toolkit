@@ -58,9 +58,11 @@ public class HUEngine extends Engine {
 			return webClient;
 		}
 		BrowserVersionBuilder bv = new BrowserVersion.BrowserVersionBuilder(BrowserVersion.BEST_SUPPORTED);
+		bv = new BrowserVersion.BrowserVersionBuilder(BrowserVersion.BEST_SUPPORTED);
 		if (cfgs.containsKey("language")) {
 			String value = cfgs.get("language");
-			bv = bv.setBrowserLanguage(value).setSystemLanguage(value).setUserLanguage(value);
+//			bv = bv.setBrowserLanguage(value).setSystemLanguage(value).setUserLanguage(value);
+			bv = bv.setBrowserLanguage(value);
 			cfgs.remove("language");
 		}
 		if (cfgs.containsKey("browser")) {
